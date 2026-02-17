@@ -165,9 +165,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 040cb11cea2c3ad4c87547da2ea46713, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BulletsController
-  bulletSpeed: 10
+  bulletSpeed: 20
   theRB: {fileID: 2395634281437798180}
   moveDir: {x: 1, y: 0}
+  impactEffect: {fileID: 793485701807386139, guid: 40c29baf784dc32478fc56a471496eeb, type: 3}
 --- !u!50 &2395634281437798180
 Rigidbody2D:
   serializedVersion: 5
