@@ -1,4 +1,5 @@
 using System.Security.Cryptography.X509Certificates;
+using Unity.Hierarchy;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -15,6 +16,7 @@ public class PlayerController : MonoBehaviour
     #region Movement
     [Header("Movement")]
     [SerializeField] private float moveSpeed;
+
     private Vector2 moveInput;
     #endregion
 
@@ -23,10 +25,21 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float jumpForce;
     [SerializeField] private float coyoteTime = 0.15f;
     [SerializeField] private float jumpBufferTime = 0.15f;
+    [SerializeField] private int maxExtraJumps = 1;
 
+    private int extraJumpsLeft;
     private bool isOnGround;
     private float coyoteCounter;
     private float jumpBufferCounter;
+    #endregion
+
+    #region Dash
+    [Header("Dash")]
+    [SerializeField] private float dashSpeed = 25f;
+    [SerializeField] private float dashTime = 0.2f;
+
+    private float dashCounter;
+    private bool isDashing;
     #endregion
 
     #region Gravity
@@ -50,6 +63,18 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private InputActionReference moveAction;
     [SerializeField] private InputActionReference jumpAction;
     [SerializeField] private InputActionReference fireAction;
+    [SerializeField] private InputActionReference dashAction;
+    #endregion
+
+    #region Later
+    [Header("Later")]
+    [SerializeField] private SpriteRenderer theSR;
+    [SerializeField] private SpriteRenderer afterImage;
+    [SerializeField] private float afterImageLifetime;
+    [SerializeField] private float timeBetweenAfterImages;
+    [SerializeField] private Color afterImageColor;
+
+    private float afterImageCounter;
     #endregion
 
     #region Unity Callbacks
@@ -58,20 +83,24 @@ public class PlayerController : MonoBehaviour
         moveAction.action.Enable();
         jumpAction.action.Enable();
         fireAction.action.Enable();
+        dashAction.action.Enable();
 
         jumpAction.action.performed += Jump;
         fireAction.action.performed += Fire;
+        dashAction.action.performed += StartDash;
     }
-
     void OnDisable()
     {
         moveAction.action.Disable();
         jumpAction.action.Disable();
         fireAction.action.Disable();
+        dashAction.action.Disable();
 
         jumpAction.action.performed -= Jump;
         fireAction.action.performed -= Fire;
+        dashAction.action.performed -= StartDash;
     }
+
     #endregion
 
     // Update is called once per frame
@@ -79,11 +108,33 @@ public class PlayerController : MonoBehaviour
     {
         moveInput = moveAction.action.ReadValue<Vector2>();
 
-        //Move sideways
-        theRB.linearVelocity = new Vector2(moveInput.x * moveSpeed, theRB.linearVelocity.y);
+        if (isDashing)
+        {
+            if (dashCounter > 0)
+            {
+                dashCounter -= Time.fixedDeltaTime;
 
-        //Handle direction change
-        if(theRB.linearVelocity.x < 0)
+                theRB.linearVelocity = new Vector2(
+                    dashSpeed * transform.localScale.x,
+                    0f
+                );
+            }
+            else
+            {
+                isDashing = false;
+            }
+            return;
+        }
+
+        // Normal movement
+        theRB.linearVelocity = new Vector2
+        (
+            moveInput.x * moveSpeed,
+            theRB.linearVelocity.y
+        );
+
+        // Direction
+        if (theRB.linearVelocity.x < 0)
         {
             transform.localScale = new Vector3(-1f, 1f, 1f);
         }
@@ -95,6 +146,12 @@ public class PlayerController : MonoBehaviour
         //Checking if on the ground
         isOnGround = Physics2D.OverlapCircle(groundPoint.position, .2f, whatIsGround);
 
+        if (isOnGround)
+        {
+            extraJumpsLeft = maxExtraJumps;
+        }
+
+
         //Coyote Time counter
         if (isOnGround)
         {
@@ -105,16 +162,30 @@ public class PlayerController : MonoBehaviour
             coyoteCounter -= Time.fixedDeltaTime;
         }
 
-        // Jump Buffer + Coyote Time
-        if (jumpBufferCounter > 0f && coyoteCounter > 0f)
-        {
-            theRB.linearVelocity = new Vector2(theRB.linearVelocity.x, jumpForce);
-            jumpBufferCounter = 0f;
-            coyoteCounter = 0f;
-        }
-        else
+        //Jump buffer counter
+        if (jumpBufferCounter > 0f)
         {
             jumpBufferCounter -= Time.fixedDeltaTime;
+        }
+
+        // Jump Buffer + Coyote Time
+        if (jumpBufferCounter > 0f)
+        {
+            //Normal Jump (Coyote or ground)
+            if (coyoteCounter > 0f)
+            {
+                theRB.linearVelocity = new Vector2(theRB.linearVelocity.x, jumpForce);
+                jumpBufferCounter = 0f;
+                coyoteCounter = 0f;
+            }
+            //Double Jump (In air)
+            else if (!isOnGround && extraJumpsLeft > 0)
+            {
+                theRB.linearVelocity = new Vector2(theRB.linearVelocity.x, jumpForce * 0.9f);
+                extraJumpsLeft--;
+                anim.SetTrigger("doubleJump");
+                jumpBufferCounter = 0f;
+            }   
         }
 
         // Fall + Jump Multiplier
@@ -136,11 +207,33 @@ public class PlayerController : MonoBehaviour
     void Fire(InputAction.CallbackContext context)
     {
         Instantiate(shotToFire, shotPoint.position, shotPoint.rotation).moveDir = new Vector2(transform.localScale.x, 0f);
+
+        //Trigger Anim
+        anim.SetTrigger("shotFired");
     }
 
     //Jump buffer counter
     void Jump(InputAction.CallbackContext context)
     {
         jumpBufferCounter = jumpBufferTime;
+    }
+    void StartDash(InputAction.CallbackContext context)
+    {
+        if (isDashing) return;
+
+        isDashing = true;
+        dashCounter = dashTime;
+
+        ShowAfterImage();
+
+        // anim.SetTrigger("dash");
+    }
+
+    public void ShowAfterImage()
+    {
+        SpriteRenderer image = Instantiate(afterImage, transform.position, transform.rotation);
+        image.sprite = theSR.sprite;
+        image.transform.localScale = transform.localScale;
+        image.color = afterImageColor;
     }
 }
