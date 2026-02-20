@@ -233,6 +233,7 @@ MonoBehaviour:
   maxExtraJumps: 1
   dashSpeed: 25
   dashTime: 0.2
+  waitAfterDashing: 0.25
   fallMultiplier: 2.45
   lowJumpMultiplier: 4
   shotToFire: {fileID: 8475475127046826097, guid: dfa9120ed926a5d4cb7bcd49e49624b8, type: 3}
@@ -2144,7 +2145,7 @@ Transform:
   m_GameObject: {fileID: 1675894448}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -4.839, z: 0}
+  m_LocalPosition: {x: 0.019, y: -1.501, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

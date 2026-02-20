@@ -37,7 +37,9 @@ public class PlayerController : MonoBehaviour
     [Header("Dash")]
     [SerializeField] private float dashSpeed = 25f;
     [SerializeField] private float dashTime = 0.2f;
+    [SerializeField] private float waitAfterDashing;
 
+    private float dashRechargeCounter;
     private float dashCounter;
     private bool isDashing;
     #endregion
@@ -66,8 +68,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private InputActionReference dashAction;
     #endregion
 
-    #region Later
-    [Header("Later")]
+    #region After Image
+    [Header("Dash After Image")]
     [SerializeField] private SpriteRenderer theSR;
     [SerializeField] private SpriteRenderer afterImage;
     [SerializeField] private float afterImageLifetime;
@@ -108,16 +110,25 @@ public class PlayerController : MonoBehaviour
     {
         moveInput = moveAction.action.ReadValue<Vector2>();
 
+        // Dash system
         if (isDashing)
         {
             if (dashCounter > 0)
             {
                 dashCounter -= Time.fixedDeltaTime;
 
-                theRB.linearVelocity = new Vector2(
+                theRB.linearVelocity = new Vector2
+                (
                     dashSpeed * transform.localScale.x,
-                    0f
+                    theRB.linearVelocity.y
                 );
+
+                // Dash after image counter
+                afterImageCounter -= Time.deltaTime;
+                if (afterImageCounter < 0)
+                {
+                    ShowAfterImage();
+                }
             }
             else
             {
@@ -235,5 +246,9 @@ public class PlayerController : MonoBehaviour
         image.sprite = theSR.sprite;
         image.transform.localScale = transform.localScale;
         image.color = afterImageColor;
+
+        Destroy(image.gameObject, afterImageLifetime);
+
+        afterImageCounter = timeBetweenAfterImages;
     }
 }
