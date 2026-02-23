@@ -2,6 +2,7 @@ using System.Security.Cryptography.X509Certificates;
 using Unity.Hierarchy;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.UI;
 
 public class PlayerController : MonoBehaviour
 {
@@ -79,6 +80,12 @@ public class PlayerController : MonoBehaviour
     private float afterImageCounter;
     #endregion
 
+    private Camera mainCam;
+    private Vector2 mouseWorldPos;
+    private int facingDirection = 1; // 1 = Right, -1 = Left
+    private int dashDirection;
+    private float originalGravity;
+
     #region Unity Callbacks
     void OnEnable()
     {
@@ -105,6 +112,40 @@ public class PlayerController : MonoBehaviour
 
     #endregion
 
+    void Start()
+    {
+        mainCam = Camera.main;
+
+        originalGravity = theRB.gravityScale;
+    }
+
+
+    private void Update()
+    {
+        mouseWorldPos = mainCam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
+
+        float dir = mouseWorldPos.x - transform.position.x;
+
+        if (dir > 0)
+        {
+            facingDirection = 1;
+        }
+        else if (dir < 0)
+        {
+            facingDirection= -1;
+        }
+
+        // Make Player look at the mouse
+        transform.localScale = new Vector3(facingDirection, 1f, 1f);
+
+        // Rotate shot point 
+        Vector2 aimDir = mouseWorldPos - (Vector2)transform.position;
+        float angle = Mathf.Atan2(aimDir.y, aimDir.x) * Mathf.Rad2Deg;
+        shotPoint.rotation = Quaternion.Euler(0, 0, angle);
+
+    }
+
+
     // Update is called once per frame
     void FixedUpdate()
     {
@@ -119,7 +160,7 @@ public class PlayerController : MonoBehaviour
 
                 theRB.linearVelocity = new Vector2
                 (
-                    dashSpeed * transform.localScale.x,
+                    dashSpeed * dashDirection,
                     theRB.linearVelocity.y
                 );
 
@@ -133,18 +174,24 @@ public class PlayerController : MonoBehaviour
             else
             {
                 isDashing = false;
+
+                theRB.gravityScale = originalGravity;
             }
             return;
         }
 
         // Normal movement
+        float moveDir = moveInput.x;
+
         theRB.linearVelocity = new Vector2
         (
-            moveInput.x * moveSpeed,
+            moveDir * moveSpeed,
             theRB.linearVelocity.y
         );
 
+
         // Direction
+        /*
         if (theRB.linearVelocity.x < 0)
         {
             transform.localScale = new Vector3(-1f, 1f, 1f);
@@ -153,6 +200,7 @@ public class PlayerController : MonoBehaviour
         {
             transform.localScale = Vector3.one;
         }
+        */
 
         //Checking if on the ground
         isOnGround = Physics2D.OverlapCircle(groundPoint.position, .2f, whatIsGround);
@@ -209,17 +257,26 @@ public class PlayerController : MonoBehaviour
             theRB.linearVelocity += Vector2.up * Physics2D.gravity.y * (lowJumpMultiplier - 1) * Time.fixedDeltaTime;
         }
 
+        float moveRelativeToFacing = moveDir * facingDirection;
 
         anim.SetBool("isOnGround", isOnGround);
-        anim.SetFloat("speed", Mathf.Abs(theRB.linearVelocity.x));
+        anim.SetFloat("speed", Mathf.Abs(moveDir));
+        // anim.SetFloat("moveDir", moveRelativeToFacing);
     }
 
     //Fire shot
     void Fire(InputAction.CallbackContext context)
     {
-        Instantiate(shotToFire, shotPoint.position, shotPoint.rotation).moveDir = new Vector2(transform.localScale.x, 0f);
+        Vector2 shootDir = (mouseWorldPos - (Vector2)shotPoint.position).normalized;
 
-        //Trigger Anim
+        BulletController bullet =
+            Instantiate(shotToFire, shotPoint.position, Quaternion.identity);
+
+        bullet.moveDir = shootDir;
+
+        float angle = Mathf.Atan2(shootDir.y, shootDir.x) * Mathf.Rad2Deg;
+        bullet.transform.rotation = Quaternion.Euler(0, 0, angle);
+
         anim.SetTrigger("shotFired");
     }
 
@@ -228,19 +285,32 @@ public class PlayerController : MonoBehaviour
     {
         jumpBufferCounter = jumpBufferTime;
     }
+
+    // Start dash
     void StartDash(InputAction.CallbackContext context)
     {
         if (isDashing) return;
 
+        // If there is no input dash to the facing direction
+        if (Mathf.Abs(moveInput.x) > 0.1f)
+        {
+            dashDirection = Mathf.RoundToInt(Mathf.Sign(moveInput.x));
+        }
+        else
+        {
+            dashDirection = facingDirection;
+        }
+
         isDashing = true;
         dashCounter = dashTime;
 
-        ShowAfterImage();
+        theRB.gravityScale = 0f;
 
-        // anim.SetTrigger("dash");
+        ShowAfterImage();
     }
 
-    public void ShowAfterImage()
+    // After image
+    void ShowAfterImage()
     {
         SpriteRenderer image = Instantiate(afterImage, transform.position, transform.rotation);
         image.sprite = theSR.sprite;
