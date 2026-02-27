@@ -3,6 +3,7 @@ using Unity.Hierarchy;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
+using UnityEngine.UIElements;
 
 public class PlayerController : MonoBehaviour
 {
@@ -43,6 +44,7 @@ public class PlayerController : MonoBehaviour
     private float dashRechargeCounter;
     private float dashCounter;
     private bool isDashing;
+    private int dashDirection;
     #endregion
 
     #region Gravity
@@ -67,6 +69,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private InputActionReference jumpAction;
     [SerializeField] private InputActionReference fireAction;
     [SerializeField] private InputActionReference dashAction;
+    [SerializeField] private InputActionReference bombAction;
     #endregion
 
     #region After Image
@@ -81,10 +84,15 @@ public class PlayerController : MonoBehaviour
     #endregion
 
     private Camera mainCam;
-    private Vector2 mouseWorldPos;
-    private int facingDirection = 1; // 1 = Right, -1 = Left
-    private int dashDirection;
     private float originalGravity;
+
+    public Vector2 mouseWorldPos { get; private set; }
+    public Vector2 aimDirection { get; private set; }
+    public int facingDirection { get; private set; } // 1 = Right, -1 = Left
+
+    [SerializeField] private Transform bombPoint;
+    [SerializeField] private GameObject bomb;
+
 
     #region Unity Callbacks
     void OnEnable()
@@ -126,30 +134,38 @@ public class PlayerController : MonoBehaviour
 
         float dir = mouseWorldPos.x - transform.position.x;
 
-        if (dir > 0)
-        {
-            facingDirection = 1;
-        }
-        else if (dir < 0)
-        {
-            facingDirection= -1;
-        }
+        mouseWorldPos = mainCam.ScreenToWorldPoint
+        (
+            Mouse.current.position.ReadValue()
+        );
 
-        // Make Player look at the mouse
+        // Aim direction
+        aimDirection = (mouseWorldPos - (Vector2)transform.position).normalized;
+
+        // Facing direction (only X matters)
+        if (aimDirection.x > 0.01f)
+            facingDirection = 1;
+        else if (aimDirection.x < -0.01f)
+            facingDirection = -1;
+
+        // Apply scale
         transform.localScale = new Vector3(facingDirection, 1f, 1f);
 
-        // Rotate shot point 
-        Vector2 aimDir = mouseWorldPos - (Vector2)transform.position;
-        float angle = Mathf.Atan2(aimDir.y, aimDir.x) * Mathf.Rad2Deg;
+        // Rotate shot point
+        float angle = Mathf.Atan2(aimDirection.y, aimDirection.x) * Mathf.Rad2Deg;
         shotPoint.rotation = Quaternion.Euler(0, 0, angle);
-
-    }
-
+    } 
 
     // Update is called once per frame
     void FixedUpdate()
     {
         moveInput = moveAction.action.ReadValue<Vector2>();
+
+        // Dash recharge counter
+        if (dashRechargeCounter > 0)
+        {
+            dashRechargeCounter -= Time.deltaTime;
+        }
 
         // Dash system
         if (isDashing)
@@ -174,7 +190,7 @@ public class PlayerController : MonoBehaviour
             else
             {
                 isDashing = false;
-
+                dashRechargeCounter = waitAfterDashing;
                 theRB.gravityScale = originalGravity;
             }
             return;
@@ -188,19 +204,6 @@ public class PlayerController : MonoBehaviour
             moveDir * moveSpeed,
             theRB.linearVelocity.y
         );
-
-
-        // Direction
-        /*
-        if (theRB.linearVelocity.x < 0)
-        {
-            transform.localScale = new Vector3(-1f, 1f, 1f);
-        }
-        else if (theRB.linearVelocity.x > 0)
-        {
-            transform.localScale = Vector3.one;
-        }
-        */
 
         //Checking if on the ground
         isOnGround = Physics2D.OverlapCircle(groundPoint.position, .2f, whatIsGround);
@@ -257,17 +260,22 @@ public class PlayerController : MonoBehaviour
             theRB.linearVelocity += Vector2.up * Physics2D.gravity.y * (lowJumpMultiplier - 1) * Time.fixedDeltaTime;
         }
 
-        float moveRelativeToFacing = moveDir * facingDirection;
+        //float moveRelativeToFacing = moveDir * facingDirection;
 
+        //Anim set for "isOnGround"
         anim.SetBool("isOnGround", isOnGround);
-        anim.SetFloat("speed", Mathf.Abs(moveDir));
+
+        // Anim set for "speed"
+        float animSpeed = Mathf.Abs(theRB.linearVelocity.x);
+        anim.SetFloat("speed", animSpeed, 0.01f, Time.deltaTime);
+
         // anim.SetFloat("moveDir", moveRelativeToFacing);
     }
 
     //Fire shot
     void Fire(InputAction.CallbackContext context)
     {
-        Vector2 shootDir = (mouseWorldPos - (Vector2)shotPoint.position).normalized;
+        Vector2 shootDir = aimDirection;
 
         BulletController bullet =
             Instantiate(shotToFire, shotPoint.position, Quaternion.identity);
@@ -289,7 +297,8 @@ public class PlayerController : MonoBehaviour
     // Start dash
     void StartDash(InputAction.CallbackContext context)
     {
-        if (isDashing) return;
+        if (isDashing || dashRechargeCounter > 0f) 
+            return;
 
         // If there is no input dash to the facing direction
         if (Mathf.Abs(moveInput.x) > 0.1f)
