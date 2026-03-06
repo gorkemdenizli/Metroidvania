@@ -56,6 +56,9 @@ public class PlayerController : MonoBehaviour
     #region Combat
     [Header("Combat")]
     [SerializeField] private BulletController shotToFire;
+    [SerializeField] private float timeBetweenShots = 0.2f;
+
+    private float shotCounter;
     #endregion
 
     #region Ground Check
@@ -83,16 +86,22 @@ public class PlayerController : MonoBehaviour
     private float afterImageCounter;
     #endregion
 
+    #region Bomb
+    [Header("Bomb")]
+    [SerializeField] private Transform bombPoint;
+    [SerializeField] private GameObject bomb;
+    [SerializeField] private float bombThrowForce = 15f;
+    #endregion
+
+    #region Group Later
+    [Header("Group Later")]
+    [SerializeField] public PlayerAbilityTracker abilities;
     private Camera mainCam;
     private float originalGravity;
-
     public Vector2 mouseWorldPos { get; private set; }
     public Vector2 aimDirection { get; private set; }
     public int facingDirection { get; private set; } // 1 = Right, -1 = Left
-
-    [SerializeField] private Transform bombPoint;
-    [SerializeField] private GameObject bomb;
-
+    #endregion
 
     #region Unity Callbacks
     void OnEnable()
@@ -101,10 +110,11 @@ public class PlayerController : MonoBehaviour
         jumpAction.action.Enable();
         fireAction.action.Enable();
         dashAction.action.Enable();
+        bombAction.action.Enable();
 
         jumpAction.action.performed += Jump;
-        fireAction.action.performed += Fire;
         dashAction.action.performed += StartDash;
+        bombAction.action.performed += DropBomb;
     }
     void OnDisable()
     {
@@ -112,10 +122,11 @@ public class PlayerController : MonoBehaviour
         jumpAction.action.Disable();
         fireAction.action.Disable();
         dashAction.action.Disable();
+        bombAction.action.Disable();
 
         jumpAction.action.performed -= Jump;
-        fireAction.action.performed -= Fire;
         dashAction.action.performed -= StartDash;
+        bombAction.action.performed -= DropBomb;
     }
 
     #endregion
@@ -125,6 +136,8 @@ public class PlayerController : MonoBehaviour
         mainCam = Camera.main;
 
         originalGravity = theRB.gravityScale;
+
+        abilities = GetComponent<PlayerAbilityTracker>();
     }
 
 
@@ -154,6 +167,21 @@ public class PlayerController : MonoBehaviour
         // Rotate shot point
         float angle = Mathf.Atan2(aimDirection.y, aimDirection.x) * Mathf.Rad2Deg;
         shotPoint.rotation = Quaternion.Euler(0, 0, angle);
+
+        // Shooting (fire while button is held)
+        if (fireAction.action.IsPressed())
+        {
+            if (shotCounter <= 0f)
+            {
+                Fire();
+                shotCounter = timeBetweenShots;
+            }
+        }
+
+        if (shotCounter > 0f)
+        {
+            shotCounter -= Time.deltaTime;
+        }
     } 
 
     // Update is called once per frame
@@ -241,7 +269,7 @@ public class PlayerController : MonoBehaviour
                 coyoteCounter = 0f;
             }
             //Double Jump (In air)
-            else if (!isOnGround && extraJumpsLeft > 0)
+            else if (!isOnGround && extraJumpsLeft > 0 && (abilities == null || abilities.canDoubleJump))
             {
                 theRB.linearVelocity = new Vector2(theRB.linearVelocity.x, jumpForce * 0.9f);
                 extraJumpsLeft--;
@@ -260,20 +288,16 @@ public class PlayerController : MonoBehaviour
             theRB.linearVelocity += Vector2.up * Physics2D.gravity.y * (lowJumpMultiplier - 1) * Time.fixedDeltaTime;
         }
 
-        //float moveRelativeToFacing = moveDir * facingDirection;
-
         //Anim set for "isOnGround"
         anim.SetBool("isOnGround", isOnGround);
 
         // Anim set for "speed"
         float animSpeed = Mathf.Abs(theRB.linearVelocity.x);
         anim.SetFloat("speed", animSpeed, 0.01f, Time.deltaTime);
-
-        // anim.SetFloat("moveDir", moveRelativeToFacing);
     }
 
     //Fire shot
-    void Fire(InputAction.CallbackContext context)
+    void Fire()
     {
         Vector2 shootDir = aimDirection;
 
@@ -294,9 +318,31 @@ public class PlayerController : MonoBehaviour
         jumpBufferCounter = jumpBufferTime;
     }
 
+    // Bomb spawn
+    void DropBomb(InputAction.CallbackContext context)
+    {
+        if (abilities != null && !abilities.canDropBomb)
+            return;
+
+        GameObject newBomb = Instantiate(bomb, bombPoint.position, Quaternion.identity);
+
+        Rigidbody2D rb = newBomb.GetComponent<Rigidbody2D>();
+
+        Vector2 throwDir = (aimDirection + Vector2.up * 0.3f).normalized;
+        rb.linearVelocity = throwDir * bombThrowForce;
+
+        if (rb != null)
+        {
+            rb.linearVelocity = aimDirection * bombThrowForce;
+        }
+    }
+
     // Start dash
     void StartDash(InputAction.CallbackContext context)
     {
+        if (abilities != null && !abilities.canDash)
+            return;
+
         if (isDashing || dashRechargeCounter > 0f) 
             return;
 

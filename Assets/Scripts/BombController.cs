@@ -2,8 +2,9 @@ using UnityEngine;
 
 public class BombController : MonoBehaviour
 {
-    [SerializeField] private float timeToExplode = .5f;
+    [SerializeField] private float timeToExplode = .75f;
     [SerializeField] GameObject explosion;
+    [SerializeField] private float bombBlastRadius = 3f;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -24,6 +25,8 @@ public class BombController : MonoBehaviour
             }
 
             Destroy(gameObject);
+            
+            Collider2D[] objectsToDamage = Physics2D.OverlapCircleAll(transform.position, bombBlastRadius);
         }
     }
 }
