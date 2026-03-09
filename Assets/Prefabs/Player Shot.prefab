@@ -169,6 +169,7 @@ MonoBehaviour:
   theRB: {fileID: 2395634281437798180}
   moveDir: {x: 1, y: 0}
   impactEffect: {fileID: 793485701807386139, guid: 40c29baf784dc32478fc56a471496eeb, type: 3}
+  damageAmount: 1
 --- !u!50 &2395634281437798180
 Rigidbody2D:
   serializedVersion: 5
@@ -192,7 +193,7 @@ Rigidbody2D:
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
-  m_Interpolate: 0
+  m_Interpolate: 2
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0

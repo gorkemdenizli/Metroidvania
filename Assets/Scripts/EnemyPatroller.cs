@@ -7,10 +7,11 @@ public class EnemyPatroller : MonoBehaviour
     [SerializeField] private float waitAtPoints;
     [SerializeField] private float jumpForce;
     [SerializeField] private Transform[] patrolPoints;
+    [SerializeField] private Animator anim;
 
     private int currentPatrolPoint;
     private float waitCounter;
-
+    private bool isTouchingWall;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -31,12 +32,16 @@ public class EnemyPatroller : MonoBehaviour
             if (transform.position.x < patrolPoints[currentPatrolPoint].position.x)
             {
                 theRB.linearVelocity = new Vector2(moveSpeed, theRB.linearVelocity.y);
-                transform.localScale = new Vector3(1f, 1f, 1f);
+                transform.localScale = new Vector3(-1f, 1f, 1f);
             }
             else
             {
                 theRB.linearVelocity = new Vector2(-moveSpeed, theRB.linearVelocity.y);
                 transform.localScale = Vector3.one;
+            }
+            if (isTouchingWall && Mathf.Abs(theRB.linearVelocity.y) < 0.01f)
+            {
+                theRB.linearVelocity = new Vector2(theRB.linearVelocity.x, jumpForce);
             }
         }
         else
@@ -54,6 +59,25 @@ public class EnemyPatroller : MonoBehaviour
                     currentPatrolPoint = 0;
                 }
             }
+        }
+
+        anim.SetFloat("speed", Mathf.Abs(theRB.linearVelocity.x));
+
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Ground"))
+        {
+            isTouchingWall = true;
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D other)
+    {
+        if (other.CompareTag("Ground"))
+        {
+            isTouchingWall = false;
         }
     }
 }
