@@ -18,7 +18,8 @@ public class PlayerController : MonoBehaviour
     #region Movement
     [Header("Movement")]
     [SerializeField] private float moveSpeed;
-
+    
+    public bool canMove;
     private Vector2 moveInput;
     #endregion
 
@@ -73,6 +74,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private InputActionReference fireAction;
     [SerializeField] private InputActionReference dashAction;
     [SerializeField] private InputActionReference bombAction;
+    [SerializeField] private InputActionReference interactAction;
     #endregion
 
     #region After Image
@@ -101,6 +103,7 @@ public class PlayerController : MonoBehaviour
     public Vector2 mouseWorldPos { get; private set; }
     public Vector2 aimDirection { get; private set; }
     public int facingDirection { get; private set; } // 1 = Right, -1 = Left
+    private GateController gate;
     #endregion
 
     #region Unity Callbacks
@@ -111,6 +114,11 @@ public class PlayerController : MonoBehaviour
         fireAction.action.Enable();
         dashAction.action.Enable();
         bombAction.action.Enable();
+        if (interactAction != null)
+        {
+            interactAction.action.Enable();
+            interactAction.action.performed += Interact;
+        }
 
         jumpAction.action.performed += Jump;
         dashAction.action.performed += StartDash;
@@ -123,6 +131,11 @@ public class PlayerController : MonoBehaviour
         fireAction.action.Disable();
         dashAction.action.Disable();
         bombAction.action.Disable();
+        if (interactAction != null)
+        {
+            interactAction.action.performed -= Interact;
+            interactAction.action.Disable();
+        }
 
         jumpAction.action.performed -= Jump;
         dashAction.action.performed -= StartDash;
@@ -138,6 +151,10 @@ public class PlayerController : MonoBehaviour
         originalGravity = theRB.gravityScale;
 
         abilities = GetComponent<PlayerAbilityTracker>();
+
+        gate = FindFirstObjectByType<GateController>();
+
+        canMove = true;
     }
 
 
@@ -169,7 +186,7 @@ public class PlayerController : MonoBehaviour
         shotPoint.rotation = Quaternion.Euler(0, 0, angle);
 
         // Shooting (fire while button is held)
-        if (fireAction.action.IsPressed())
+        if (canMove && fireAction.action.IsPressed())
         {
             if (shotCounter <= 0f)
             {
@@ -224,14 +241,27 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        // Normal movement
-        float moveDir = moveInput.x;
+        // Normal movement (only if canMove)
+        if (canMove)
+        {
+            float moveDir = moveInput.x;
 
-        theRB.linearVelocity = new Vector2
-        (
-            moveDir * moveSpeed,
-            theRB.linearVelocity.y
-        );
+            theRB.linearVelocity = new Vector2
+            (
+                moveDir * moveSpeed,
+                theRB.linearVelocity.y
+            );
+        }
+        else
+        {
+            theRB.linearVelocity = Vector2.zero;
+
+            // Force idle animation when movement is disabled
+            anim.SetBool("isOnGround", true);
+            anim.SetFloat("speed", 0f);
+
+            return;
+        }
 
         //Checking if on the ground
         isOnGround = Physics2D.OverlapCircle(groundPoint.position, .2f, whatIsGround);
@@ -299,6 +329,9 @@ public class PlayerController : MonoBehaviour
     //Fire shot
     void Fire()
     {
+        if (!canMove)
+            return;
+
         Vector2 shootDir = aimDirection;
 
         BulletController bullet =
@@ -315,12 +348,28 @@ public class PlayerController : MonoBehaviour
     //Jump buffer counter
     void Jump(InputAction.CallbackContext context)
     {
+        if (!canMove)
+            return;
+
         jumpBufferCounter = jumpBufferTime;
+    }
+
+    // Interact (used for gates and other interactables)
+    void Interact(InputAction.CallbackContext context)
+    {
+        if (!canMove)
+            return;
+
+        if (gate != null)
+            gate.HandlePlayerInteract();
     }
 
     // Bomb spawn
     void DropBomb(InputAction.CallbackContext context)
     {
+        if (!canMove)
+            return;
+
         if (abilities != null && !abilities.canDropBomb)
             return;
 
@@ -340,6 +389,9 @@ public class PlayerController : MonoBehaviour
     // Start dash
     void StartDash(InputAction.CallbackContext context)
     {
+        if (!canMove)
+            return;
+
         if (abilities != null && !abilities.canDash)
             return;
 
