@@ -11,7 +11,7 @@ public class CameraController : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        player = FindAnyObjectByType<PlayerController>();
+        TryResolvePlayer();
 
         halfHeight = Camera.main.orthographicSize;
         halfWidth = halfHeight * Camera.main.aspect;
@@ -20,6 +20,9 @@ public class CameraController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (player == null)
+            TryResolvePlayer();
+
         if (player != null)
         {
             transform.position = new Vector3
@@ -29,5 +32,10 @@ public class CameraController : MonoBehaviour
                     transform.position.z
                 );
         }
+    }
+
+    private void TryResolvePlayer()
+    {
+        player = FindAnyObjectByType<PlayerController>(FindObjectsInactive.Include);
     }
 }

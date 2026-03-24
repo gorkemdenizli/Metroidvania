@@ -20,35 +20,43 @@ public class CameraMouseOffset : MonoBehaviour
 
     void Update()
     {
-        if (player == null) return;
-
-        Vector2 playerPos = player.transform.position;
-        Vector2 mousePos = player.mouseWorldPos;
-
-        Vector2 toMouse = mousePos - playerPos;
-        float distance = toMouse.magnitude;
-
-        Vector3 targetOffset = Vector3.zero;
-
-        // If the mouse is outside the dead zone
-        if (distance > deadZoneRadius)
+        if (player == null)
         {
-            float excessDistance = distance - deadZoneRadius;
-
-            // Normalized direction
-            Vector2 dir = toMouse.normalized;
-
-            targetOffset = new Vector3(
-                dir.x * Mathf.Clamp(excessDistance, 0, maxOffsetX),
-                dir.y * Mathf.Clamp(excessDistance, 0, maxOffsetY) * 0.5f,
-                0f
-            );
+            player = FindAnyObjectByType<PlayerController>(FindObjectsInactive.Include);
+            if (player == null)
+                return;
         }
 
+        if (composer == null)
+            return;
+
+        Vector2 mouseScreen = Mouse.current.position.ReadValue();
+
+        // Viewport (0-1)
+        Vector2 viewport = Camera.main.ScreenToViewportPoint(mouseScreen);
+
+        // Clamp → dışarı çıksa bile 0-1 arası kalır
+        viewport.x = Mathf.Clamp01(viewport.x);
+        viewport.y = Mathf.Clamp01(viewport.y);
+
+        // -1 ile +1 arası merkez bazlı değer
+        Vector2 centered = (viewport - new Vector2(0.5f, 0.5f)) * 2f;
+
+        // Dead zone (opsiyonel ama öneririm)
+        if (centered.magnitude < 0.2f)
+            centered = Vector2.zero;
+
+        Vector3 targetOffset = new Vector3(
+            centered.x * maxOffsetX,
+            centered.y * maxOffsetY * 0.5f,
+            0f
+        );
+
+        // 🔥 Smooth'u düzgün hissettiren kısım
         composer.TargetOffset = Vector3.Lerp(
             composer.TargetOffset,
             targetOffset,
-            Time.deltaTime * smooth
+            1 - Mathf.Exp(-smooth * Time.deltaTime)
         );
     }
 }

@@ -142,6 +142,25 @@ public class PlayerController : MonoBehaviour
         bombAction.action.performed -= DropBomb;
     }
 
+    /// <summary>
+    /// Scene copies of the player call <see cref="OnDisable"/> and disable the shared
+    /// <see cref="InputActionReference"/> assets. Re-enable after load (next frame).
+    /// Does not re-subscribe input callbacks; the persistent player still holds them.
+    /// </summary>
+    public void RestoreInputAfterSceneLoad()
+    {
+        moveAction.action.Enable();
+        jumpAction.action.Enable();
+        fireAction.action.Enable();
+        dashAction.action.Enable();
+        bombAction.action.Enable();
+        if (interactAction != null)
+            interactAction.action.Enable();
+
+        canMove = true;
+        gate = FindFirstObjectByType<GateController>();
+    }
+
     #endregion
 
     void Start()
@@ -160,14 +179,17 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        if (Mouse.current == null)
+            return;
+
+        // Camera can be destroyed during scene transitions; re-resolve when needed.
+        if (mainCam == null)
+            mainCam = Camera.main;
+
+        if (mainCam == null)
+            return;
+
         mouseWorldPos = mainCam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
-
-        float dir = mouseWorldPos.x - transform.position.x;
-
-        mouseWorldPos = mainCam.ScreenToWorldPoint
-        (
-            Mouse.current.position.ReadValue()
-        );
 
         // Aim direction
         aimDirection = (mouseWorldPos - (Vector2)transform.position).normalized;

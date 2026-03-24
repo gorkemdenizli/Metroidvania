@@ -6,8 +6,8 @@ using UnityEngine.SceneManagement;
 public class GateController : MonoBehaviour
 {
     [SerializeField] private Animator anim;
-    [SerializeField] private float distanceToOpen;
     [SerializeField] private string levelToLoad;
+    [SerializeField] private Transform spawnPoint;
 
     private PlayerController thePlayer;
     private bool playerExiting;
@@ -58,9 +58,17 @@ public class GateController : MonoBehaviour
     IEnumerator UseGateCoroutine()
     {
         playerExiting = true;
+
+        UIController.instance.StartFadeToBlack();
         
         yield return new WaitForSeconds(1.5f);
-        
-        
+
+        RespawnController.instance.PrepareGateTransition(spawnPoint.position);
+
+        thePlayer.canMove = true;
+
+        UIController.instance.StartFadeFromBlack();
+
+        SceneManager.LoadScene(levelToLoad);
     }
 }
