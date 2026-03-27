@@ -311,6 +311,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1857451653937495298}
   - component: {fileID: 1225384896099985855}
+  - component: {fileID: 658813489872798618}
   - component: {fileID: 4265014486683092381}
   - component: {fileID: 4230966351782332738}
   - component: {fileID: 5626446488094460919}
@@ -367,6 +368,18 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
+--- !u!114 &658813489872798618
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6831225920063122537}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33a23914a7fd88143881bb018c194755, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerSceneTransitionSupport
 --- !u!114 &4265014486683092381
 MonoBehaviour:
   m_ObjectHideFlags: 0

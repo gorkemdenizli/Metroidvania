@@ -9,14 +9,14 @@ public class CameraMouseOffset : MonoBehaviour
     [SerializeField] private CinemachinePositionComposer composer;
 
     [Header("Dead Zone")]
-    [SerializeField] private float deadZoneRadius = 2f;
+    [SerializeField] private float deadZoneRadius;
 
     [Header("Offset")]
-    [SerializeField] private float maxOffsetX = 3f;
-    [SerializeField] private float maxOffsetY = 2f;
+    [SerializeField] private float maxOffsetX;
+    [SerializeField] private float maxOffsetY;
 
     [Header("Smoothing")]
-    [SerializeField] private float smooth = 6f;
+    [SerializeField] private float smooth;
 
     void Update()
     {
@@ -43,7 +43,7 @@ public class CameraMouseOffset : MonoBehaviour
         Vector2 centered = (viewport - new Vector2(0.5f, 0.5f)) * 2f;
 
         // Dead zone (opsiyonel ama öneririm)
-        if (centered.magnitude < 0.2f)
+        if (centered.magnitude < deadZoneRadius)
             centered = Vector2.zero;
 
         Vector3 targetOffset = new Vector3(

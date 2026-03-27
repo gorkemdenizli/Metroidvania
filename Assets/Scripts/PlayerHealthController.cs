@@ -1,7 +1,4 @@
-using System.Collections;
-using Unity.Cinemachine;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class PlayerHealthController : MonoBehaviour
 {
@@ -13,48 +10,11 @@ public class PlayerHealthController : MonoBehaviour
         {
             instance = this;
             DontDestroyOnLoad(gameObject);
-            SceneManager.sceneLoaded += OnSceneLoaded;
         } 
         else 
         {
             Destroy(gameObject);
         }
-    }
-
-    private void OnDestroy()
-    {
-        if (instance == this)
-            SceneManager.sceneLoaded -= OnSceneLoaded;
-    }
-
-    /// <summary>
-    /// Scene players are destroyed when a DDOL player already exists, but Cinemachine
-    /// still references the destroyed transform from the loaded scene. Rebind after load.
-    /// </summary>
-    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-    {
-        Transform t = transform;
-        foreach (CinemachineCamera vcam in FindObjectsByType<CinemachineCamera>(FindObjectsSortMode.None))
-        {
-            if (vcam == null)
-                continue;
-
-            CameraTarget ct = vcam.Target;
-            ct.TrackingTarget = t;
-            vcam.Target = ct;
-        }
-
-        // Duplicate scene Player OnDisable runs end-of-frame and disables shared InputActions.
-        StartCoroutine(RestorePlayerInputAfterSceneDuplicateTeardown());
-    }
-
-    private IEnumerator RestorePlayerInputAfterSceneDuplicateTeardown()
-    {
-        yield return null;
-
-        PlayerController pc = instance.GetComponent<PlayerController>();
-        if (pc != null)
-            pc.RestoreInputAfterSceneLoad();
     }
 
     [SerializeField] private int maxHealth;
