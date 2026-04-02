@@ -152,6 +152,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1857451653937495298, guid: 52b538d60c6f84e4e9284c82fcfc1626, type: 3}
   m_PrefabInstance: {fileID: 603223504954469590}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &315616352 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3178723832509116411, guid: eaa8a0a86cb3ff94c998167a4831a094, type: 3}
+  m_PrefabInstance: {fileID: 6421661012956956867}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
 --- !u!114 &350895111
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2874,6 +2885,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.InputActionReference
   m_Asset: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_ActionId: f1ba0d36-48eb-4cd5-b651-1c94a6531f70
+--- !u!114 &1830596340 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6246096282433767909, guid: eaa8a0a86cb3ff94c998167a4831a094, type: 3}
+  m_PrefabInstance: {fileID: 6421661012956956867}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67db9e8f0e2ae9c40bc1e2b64352a6b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Slider
 --- !u!114 &1839485312
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2936,6 +2958,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4230966351782332738, guid: 52b538d60c6f84e4e9284c82fcfc1626, type: 3}
+      propertyPath: healthText
+      value: 
+      objectReference: {fileID: 315616352}
+    - target: {fileID: 4230966351782332738, guid: 52b538d60c6f84e4e9284c82fcfc1626, type: 3}
+      propertyPath: healthSlider
+      value: 
+      objectReference: {fileID: 1830596340}
     - target: {fileID: 4265014486683092381, guid: 52b538d60c6f84e4e9284c82fcfc1626, type: 3}
       propertyPath: bombAction
       value: 
@@ -3259,15 +3289,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2257067522094316229, guid: 3f77e4509ed4cc54a908101ef1c181df, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 74.95
       objectReference: {fileID: 0}
     - target: {fileID: 2257067522094316229, guid: 3f77e4509ed4cc54a908101ef1c181df, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.6000004
+      value: 12.85
       objectReference: {fileID: 0}
     - target: {fileID: 2257067522094316229, guid: 3f77e4509ed4cc54a908101ef1c181df, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -5
+      value: -10
       objectReference: {fileID: 0}
     - target: {fileID: 2862793141309293294, guid: 3f77e4509ed4cc54a908101ef1c181df, type: 3}
       propertyPath: m_LocalPosition.x

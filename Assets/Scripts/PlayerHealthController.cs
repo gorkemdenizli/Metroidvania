@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 public class PlayerHealthController : MonoBehaviour
 {
@@ -17,6 +19,8 @@ public class PlayerHealthController : MonoBehaviour
         }
     }
 
+    [SerializeField] private Slider healthSlider;
+    [SerializeField] private TMP_Text healthText;
     [SerializeField] private int maxHealth;
     [SerializeField] private int currentHealth;
     [SerializeField] private float invincibilityLength;
@@ -30,7 +34,7 @@ public class PlayerHealthController : MonoBehaviour
     {
         currentHealth = maxHealth;
 
-        UIController.instance.UpdateHealthSlider(currentHealth, maxHealth);
+        UpdateHealthSlider(currentHealth, maxHealth);
     }
 
     // Update is called once per frame
@@ -62,6 +66,20 @@ public class PlayerHealthController : MonoBehaviour
         }
     }
 
+    public void UpdateHealthSlider(int currentHealth, int maxHealth)
+    {
+        if (healthSlider != null)
+        {
+            healthSlider.maxValue = maxHealth;
+            healthSlider.value = currentHealth;
+        }
+
+        if (healthText != null)
+        {
+            healthText.text = currentHealth + " / " + maxHealth;
+        }
+    }
+
     public void DamagePlayer(int damageAmount)
     {
         if (invincibilityCounter <= 0)
@@ -80,7 +98,7 @@ public class PlayerHealthController : MonoBehaviour
                 invincibilityCounter = invincibilityLength;
             }
 
-            UIController.instance.UpdateHealthSlider(currentHealth, maxHealth);
+            UpdateHealthSlider(currentHealth, maxHealth);
         }
     }
 
@@ -88,7 +106,7 @@ public class PlayerHealthController : MonoBehaviour
     {
         currentHealth = maxHealth;
 
-        UIController.instance.UpdateHealthSlider(currentHealth, maxHealth);
+        UpdateHealthSlider(currentHealth, maxHealth);
     }
 
     public void HealPlayer(int healAmount)
@@ -100,6 +118,6 @@ public class PlayerHealthController : MonoBehaviour
             currentHealth = maxHealth;
         }
 
-        UIController.instance.UpdateHealthSlider(currentHealth, maxHealth);
+        UpdateHealthSlider(currentHealth, maxHealth);
     }
 }

@@ -20,6 +20,11 @@ public class BulletController : MonoBehaviour
         {
             collision.GetComponent<EnemyHealthController>()?.DamageEnemy(damageAmount);
         }
+
+        if (collision.CompareTag("Boss"))
+        {
+            BossHealthController.instance.DamageBoss(damageAmount);
+        }
         
         if (impactEffect != null)
         {

@@ -595,8 +595,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 002d38f4bc5d25b40a1f56715e4fb7f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIController
-  healthSlider: {fileID: 6246096282433767909}
-  healthText: {fileID: 3178723832509116411}
   fadeScreen: {fileID: 1143020394564753462}
   fadeSpeed: 2
   shouldFadeFromBlack: 0

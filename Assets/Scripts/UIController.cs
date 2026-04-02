@@ -19,8 +19,6 @@ public class UIController : MonoBehaviour
         }
     }
 
-    [SerializeField] private Slider healthSlider;
-    [SerializeField] private TMP_Text healthText;
     [SerializeField] private Image fadeScreen;
     [SerializeField] private float fadeSpeed = 2f;
     [SerializeField] private bool shouldFadeFromBlack;
@@ -52,17 +50,6 @@ public class UIController : MonoBehaviour
             {
                 shouldFadeFromBlack = false;
             }
-        }
-    }
-
-    public void UpdateHealthSlider(int currentHealth, int maxHealth)
-    {
-        healthSlider.maxValue = maxHealth;
-        healthSlider.value = currentHealth;
-
-        if (healthText != null)
-        {
-            healthText.text = currentHealth + " / " + maxHealth;
         }
     }
 
