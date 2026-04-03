@@ -11,7 +11,12 @@ public class BossBattle : MonoBehaviour
     [SerializeField] private Transform[] spawnPoints;
     [SerializeField] private Animator anim;
     [SerializeField] private Transform theBoss;
+    [SerializeField] private float timeBetweenShots1;
+    [SerializeField] private float timeBetweenShots2;
+    [SerializeField] private GameObject bullet;
+    [SerializeField] private Transform shotPoint;
 
+    private float shotCounter;
     private float activeCounter;
     private float fadeOutCounter;
     private float inactiveCounter;
@@ -21,6 +26,8 @@ public class BossBattle : MonoBehaviour
     void Start()
     {
         activeCounter = activeTime;
+
+        shotCounter = timeBetweenShots1;
     }
 
     // Update is called once per frame
@@ -35,6 +42,13 @@ public class BossBattle : MonoBehaviour
                 {
                     fadeOutCounter = fadeOutTime;
                     anim.SetTrigger("vanish");
+                }
+
+                shotCounter -= Time.deltaTime;
+                if (shotCounter <= 0)
+                {
+                    shotCounter = timeBetweenShots1;
+                    Instantiate(bullet, shotPoint.position, Quaternion.identity);
                 }
             }
             else if (fadeOutCounter > 0)
@@ -55,6 +69,82 @@ public class BossBattle : MonoBehaviour
                     theBoss.gameObject.SetActive(true);
 
                     activeCounter = activeTime;
+
+                    shotCounter = timeBetweenShots1;
+                }
+            }
+        }
+        else
+        {
+            if (targetPoint == null)
+            {
+                targetPoint = theBoss;
+                fadeOutCounter = fadeOutTime;
+                anim.SetTrigger("vanish");
+            }
+            else
+            {
+                if (Vector3.Distance(theBoss.position, targetPoint.position) > 0.2f)
+                {
+                    theBoss.position = Vector3.MoveTowards(theBoss.position, targetPoint.position, moveSpeed * Time.deltaTime);
+
+                    if (Vector3.Distance(theBoss.position, targetPoint.position) <= 0.2f)
+                    {
+                        fadeOutCounter = fadeOutTime;
+                        anim.SetTrigger("vanish");
+                    }
+                    
+                    shotCounter -= Time.deltaTime;
+                    if (shotCounter <= 0)
+                    {
+                        if (PlayerHealthController.instance.currentHealth > treshold2)
+                        {
+                            shotCounter = timeBetweenShots1;
+                        }
+                        else
+                        {
+                            shotCounter = timeBetweenShots2;
+                        }
+
+                        Instantiate(bullet, shotPoint.position, Quaternion.identity);
+                    }
+                }
+                else if (fadeOutCounter > 0)
+                {
+                    fadeOutCounter -= Time.deltaTime;
+                    if (fadeOutCounter <= 0)
+                    {
+                        theBoss.gameObject.SetActive(false);
+                        inactiveCounter = inactiveTime;
+                    }
+                }
+                else if (inactiveCounter > 0)
+                {
+                    inactiveCounter -= Time.deltaTime;
+                    if (inactiveCounter <= 0)
+                    {
+                        theBoss.position = spawnPoints[Random.Range(0, spawnPoints.Length)].position;
+
+                        targetPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
+
+                        int whileBreaker = 0;
+                        while (targetPoint.position == theBoss.position && whileBreaker < 100)
+                        {
+                            targetPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
+                            whileBreaker++;
+                        }
+
+                        theBoss.gameObject.SetActive(true);
+
+                        if (PlayerHealthController.instance.currentHealth > treshold2)
+                        {
+                            shotCounter = timeBetweenShots1;
+                        }
+                        else
+                        {
+                            shotCounter = timeBetweenShots2;
+                        }
+                    }
                 }
             }
         }

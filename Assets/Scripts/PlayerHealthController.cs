@@ -22,7 +22,7 @@ public class PlayerHealthController : MonoBehaviour
     [SerializeField] private Slider healthSlider;
     [SerializeField] private TMP_Text healthText;
     [SerializeField] private int maxHealth;
-    [SerializeField] private int currentHealth;
+    public int currentHealth;
     [SerializeField] private float invincibilityLength;
     private float invincibilityCounter;
     [SerializeField] private float flashLength;

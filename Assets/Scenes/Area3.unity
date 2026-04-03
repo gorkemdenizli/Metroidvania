@@ -1263,6 +1263,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1225384896099985855, guid: 52b538d60c6f84e4e9284c82fcfc1626, type: 3}
+      propertyPath: m_BodyType
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1857451653937495298, guid: 52b538d60c6f84e4e9284c82fcfc1626, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -1308,9 +1312,21 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 507652776}
     - target: {fileID: 4230966351782332738, guid: 52b538d60c6f84e4e9284c82fcfc1626, type: 3}
+      propertyPath: flashLength
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4230966351782332738, guid: 52b538d60c6f84e4e9284c82fcfc1626, type: 3}
       propertyPath: healthSlider
       value: 
       objectReference: {fileID: 507652775}
+    - target: {fileID: 4230966351782332738, guid: 52b538d60c6f84e4e9284c82fcfc1626, type: 3}
+      propertyPath: playerSprites.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4230966351782332738, guid: 52b538d60c6f84e4e9284c82fcfc1626, type: 3}
+      propertyPath: 'playerSprites.Array.data[0]'
+      value: 
+      objectReference: {fileID: 1447451704}
     - target: {fileID: 4265014486683092381, guid: 52b538d60c6f84e4e9284c82fcfc1626, type: 3}
       propertyPath: bombAction
       value: 
@@ -1695,8 +1711,8 @@ GameObject:
   - component: {fileID: 600446019}
   - component: {fileID: 600446020}
   - component: {fileID: 600446021}
-  m_Layer: 0
-  m_Name: Sprite
+  m_Layer: 12
+  m_Name: Sprite Boss
   m_TagString: Boss
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1711,10 +1727,11 @@ Transform:
   m_GameObject: {fileID: 600446017}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.45, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1032285461}
   m_Father: {fileID: 1207538530}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &600446019
@@ -74548,7 +74565,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1008827127}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: Spawn Points
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -74664,6 +74681,37 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1 &1032285460
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1032285461}
+  m_Layer: 12
+  m_Name: Shot Point
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1032285461
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1032285460}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.263, y: -0.209, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 600446018}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1040071190
 GameObject:
   m_ObjectHideFlags: 0
@@ -74992,7 +75040,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1153560421}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: Spawn
   m_TagString: Untagged
   m_Icon: {fileID: 3306451490063965843, guid: 0000000000000000d000000000000000, type: 0}
@@ -75025,7 +75073,7 @@ GameObject:
   - component: {fileID: 1207538530}
   - component: {fileID: 1207538532}
   - component: {fileID: 1207538531}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: Boss
   m_TagString: Boss
   m_Icon: {fileID: 0}
@@ -75041,13 +75089,12 @@ Transform:
   m_GameObject: {fileID: 1207538529}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.22, y: 7.4, z: 0}
+  m_LocalPosition: {x: -0.005, y: 7.55, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 600446018}
   - {fileID: 1008827127}
-  - {fileID: 1456497348}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1207538531
@@ -75091,6 +75138,10 @@ MonoBehaviour:
   - {fileID: 1617278122}
   anim: {fileID: 600446020}
   theBoss: {fileID: 600446018}
+  timeBetweenShots1: 1
+  timeBetweenShots2: 0.5
+  bullet: {fileID: 1847370571156216257, guid: ff075d8e8d8625f41a1f06f84ceca41b, type: 3}
+  shotPoint: {fileID: 1032285461}
 --- !u!1 &1297488080
 GameObject:
   m_ObjectHideFlags: 0
@@ -75194,6 +75245,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.InputActionReference
   m_Asset: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_ActionId: f1ba0d36-48eb-4cd5-b651-1c94a6531f70
+--- !u!212 &1447451704 stripped
+SpriteRenderer:
+  m_CorrespondingSourceObject: {fileID: 6562148725262995213, guid: 52b538d60c6f84e4e9284c82fcfc1626, type: 3}
+  m_PrefabInstance: {fileID: 507997715}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1456497347
 GameObject:
   m_ObjectHideFlags: 0
@@ -75207,7 +75263,7 @@ GameObject:
   - component: {fileID: 1456497350}
   - component: {fileID: 1456497349}
   m_Layer: 0
-  m_Name: Canvas
+  m_Name: Canvas Boss Health
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -75226,7 +75282,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1031508267}
-  m_Father: {fileID: 1207538530}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -75319,7 +75375,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1617278122}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: Spawn (2)
   m_TagString: Untagged
   m_Icon: {fileID: 3306451490063965843, guid: 0000000000000000d000000000000000, type: 0}
@@ -75816,7 +75872,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2037900595}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: Spawn (1)
   m_TagString: Untagged
   m_Icon: {fileID: 3306451490063965843, guid: 0000000000000000d000000000000000, type: 0}
@@ -75848,5 +75904,6 @@ SceneRoots:
   - {fileID: 507652774}
   - {fileID: 352048606}
   - {fileID: 529853057}
+  - {fileID: 1456497348}
   - {fileID: 1207538530}
   - {fileID: 90473949}
