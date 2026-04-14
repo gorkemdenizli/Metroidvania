@@ -4,10 +4,13 @@ public class EnemyHealthController : MonoBehaviour
 {
     [SerializeField] private int totalHealth;
     [SerializeField] private GameObject deathEffect;
-    [Header("Drops")]
-    [SerializeField] private GameObject healthPickupPrefab;
-    [Range(0f, 1f)]
-    [SerializeField] private float healthPickupChance = 0.25f;
+    [SerializeField] private EnemyDrops enemyDrops;
+
+    void Awake()
+    {
+        if (enemyDrops == null)
+            enemyDrops = GetComponent<EnemyDrops>();
+    }
 
     public void DamageEnemy(int damageAmount)
     {
@@ -20,10 +23,8 @@ public class EnemyHealthController : MonoBehaviour
                 Instantiate(deathEffect, transform.position, transform.rotation);
             }
 
-            if (healthPickupPrefab != null && Random.value <= healthPickupChance)
-            {
-                Instantiate(healthPickupPrefab, transform.position, Quaternion.identity);
-            }
+            if (enemyDrops != null)
+                enemyDrops.TrySpawnDrops(transform.position);
 
             Destroy(gameObject);
         }
