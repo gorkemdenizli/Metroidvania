@@ -7,6 +7,8 @@ TagManager:
   - Ground
   - Enemy
   - Boss
+  - Weapon
+  - Shot
   layers:
   - Default
   - TransparentFX
@@ -22,7 +24,7 @@ TagManager:
   - TriggerZone
   - Boss
   - BossShot
-  - 
+  - Weapon
   - 
   - 
   - 
@@ -52,6 +54,12 @@ TagManager:
     locked: 0
   - name: Ground
     uniqueID: 55944327
+    locked: 0
+  - name: Weapon
+    uniqueID: 1253370059
+    locked: 0
+  - name: Shot
+    uniqueID: 2860580537
     locked: 0
   m_RenderingLayers:
   - Default
