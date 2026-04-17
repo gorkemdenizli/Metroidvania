@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e8d8cfa64cc7c943b5a09a40a8ec64b, type: 3}
-  m_Name: WeaponData_Vector
+  m_Name: WeaponData_AssaultRifle
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
-  damage: 10
-  fireRate: 20
+  damage: 12
+  fireRate: 6
   accuracy: 2
-  magazineSize: 24
+  magazineSize: 30
   startingTotalAmmo: 600
-  reloadSpeed: 1
-  bulletSpeed: 60
-  weaponSprite: {fileID: 6132957875410310527, guid: 943c61fb86931eb42b7301c1801d6fa0, type: 3}
+  reloadSpeed: 2.4
+  bulletSpeed: 40
+  weaponSprite: {fileID: -1552922683845821017, guid: 943c61fb86931eb42b7301c1801d6fa0, type: 3}

@@ -19,6 +19,25 @@ public class CameraMouseOffset : MonoBehaviour
     [Header("Smoothing")]
     [SerializeField] private float smooth;
 
+    float _externalMaxOffsetXScale = 1f;
+    float _externalMaxOffsetYScale = 1f;
+
+    /// <summary>
+    /// Harici sistemler (precise aim vb.) tarafından her kare veya hedef değişince ayarlanır; varsayılan 1.
+    /// </summary>
+    public void SetExternalMaxOffsetXScale(float scale)
+    {
+        _externalMaxOffsetXScale = Mathf.Max(0f, scale);
+    }
+
+    /// <summary>
+    /// maxOffsetY (mouse dikey) ile çarpılır; varsayılan 1.
+    /// </summary>
+    public void SetExternalMaxOffsetYScale(float scale)
+    {
+        _externalMaxOffsetYScale = Mathf.Max(0f, scale);
+    }
+
     void Update()
     {
         if (player == null)
@@ -54,9 +73,11 @@ public class CameraMouseOffset : MonoBehaviour
         if (centered.magnitude < dz)
             centered = Vector2.zero;
 
+        float effMaxX = maxOffsetX * _externalMaxOffsetXScale;
+        float effMaxY = maxOffsetY * _externalMaxOffsetYScale;
         Vector3 targetOffset = new Vector3(
-            centered.x * maxOffsetX,
-            centered.y * maxOffsetY * 0.5f,
+            centered.x * effMaxX,
+            centered.y * effMaxY * 0.5f,
             0f
         );
 

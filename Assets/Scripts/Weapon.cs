@@ -36,15 +36,24 @@ public class Weapon : MonoBehaviour
     [SerializeField] private Vector3 muzzleLocalAdjustWhenAimLeft;
 
     [Header("Ammo UI (TMP)")]
-    [Tooltip("Format: rounds in mag / total counter. Total only drops after a reload (by rounds loaded from reserve), not per shot.")]
+    [Tooltip("Şarjördeki mermi. Total TMP atanmadıysa eski gibi \"mag / total\" tek satırda burada gösterilir.")]
     [FormerlySerializedAs("combinedAmmoText")]
-    [SerializeField] private TMP_Text ammoCountText;
+    [FormerlySerializedAs("ammoCountText")]
+    [SerializeField] private TMP_Text ammoMagazineText;
+    [Tooltip("Genelde sabit \"/\"; ayrı TMP istemezsen boş bırak.")]
+    [SerializeField] private TMP_Text ammoSeparatorText;
+    [Tooltip("Sağdaki toplam sayı (_displayTotalAmmo). Reload bitene kadar mag boşken gecikmeli güncellenme aynı.")]
+    [SerializeField] private TMP_Text ammoTotalText;
 
     [Tooltip("Optional UI Image next to ammo text — shows WeaponData.weaponSprite (static icon).")]
     [SerializeField] private Image ammoHudWeaponImage;
 
     [Tooltip("Optional SpriteRenderer on HUD (if not using UI Image) — same sprite.")]
     [SerializeField] private SpriteRenderer ammoHudWeaponSprite;
+
+    [Header("Reload UI")]
+    [Tooltip("Reload sırasında görünür; süre boyunca 0 → 1 dolar, bitince kapanır.")]
+    [SerializeField] private Slider reloadProgressSlider;
 
     private int _magAmmo;
     private int _reserveAmmo;
@@ -77,6 +86,19 @@ public class Weapon : MonoBehaviour
         }
 
         RefreshAmmoUi();
+
+        if (reloadProgressSlider != null)
+        {
+            reloadProgressSlider.minValue = 0f;
+            reloadProgressSlider.maxValue = 1f;
+            reloadProgressSlider.gameObject.SetActive(false);
+        }
+    }
+
+    void OnDisable()
+    {
+        if (reloadProgressSlider != null)
+            reloadProgressSlider.gameObject.SetActive(false);
     }
 
     // Split starting total into magazine + reserve.
@@ -92,14 +114,28 @@ public class Weapon : MonoBehaviour
     // mag / total UI; total matches carried after reload, lags while mag is empty until reload completes.
     void RefreshAmmoUi()
     {
-        if (weaponData == null || ammoCountText == null)
+        if (weaponData == null)
             return;
 
         int carried = _magAmmo + _reserveAmmo;
         if (carried == 0)
             _displayTotalAmmo = 0;
 
-        ammoCountText.text = _magAmmo + " / " + _displayTotalAmmo;
+        if (ammoMagazineText != null && ammoTotalText != null)
+        {
+            ammoMagazineText.text = _magAmmo.ToString();
+            ammoTotalText.text = _displayTotalAmmo.ToString();
+            if (ammoSeparatorText != null)
+                ammoSeparatorText.text = "/";
+        }
+        else if (ammoMagazineText != null)
+        {
+            ammoMagazineText.text = _magAmmo + " / " + _displayTotalAmmo;
+        }
+        else if (ammoTotalText != null)
+        {
+            ammoTotalText.text = _magAmmo + " / " + _displayTotalAmmo;
+        }
     }
 
     // Call from pickups etc.
@@ -297,7 +333,28 @@ public class Weapon : MonoBehaviour
     {
         _reloading = true;
         RefreshAmmoUi();
-        yield return new WaitForSeconds(weaponData.reloadSpeed);
+
+        float duration = Mathf.Max(0.0001f, weaponData.reloadSpeed);
+        if (reloadProgressSlider != null)
+        {
+            reloadProgressSlider.gameObject.SetActive(true);
+            reloadProgressSlider.value = 0f;
+        }
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            if (reloadProgressSlider != null)
+                reloadProgressSlider.value = Mathf.Clamp01(elapsed / duration);
+            yield return null;
+        }
+
+        if (reloadProgressSlider != null)
+        {
+            reloadProgressSlider.value = 1f;
+            reloadProgressSlider.gameObject.SetActive(false);
+        }
 
         int cap = weaponData.magazineSize;
         int need = cap - _magAmmo;

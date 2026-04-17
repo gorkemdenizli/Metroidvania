@@ -152,6 +152,7 @@ public class PlayerController : MonoBehaviour
     // cache camera gravity abilities gate jump charges
     void Start()
     {
+        Cursor.visible = false;
         mainCam = Camera.main;
         originalGravity = theRB.gravityScale;
         abilities = GetComponent<PlayerAbilityTracker>();
