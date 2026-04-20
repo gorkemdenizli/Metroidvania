@@ -32,9 +32,6 @@ public class Weapon : MonoBehaviour
     [Tooltip("Added to cached base local pos when cursor is left of body (e.g. small negative X).")]
     [SerializeField] private Vector3 localOffsetWhenAimLeft;
 
-    [Tooltip("Added to Shot Point localPosition (parent = Pivot) when aiming left. flipY moves only the sprite; raise Y here if bullets spawn below the barrel (e.g. 0, 0.15, 0).")]
-    [SerializeField] private Vector3 muzzleLocalAdjustWhenAimLeft;
-
     [Header("Ammo UI (TMP)")]
     [Tooltip("Şarjördeki mermi. Total TMP atanmadıysa eski gibi \"mag / total\" tek satırda burada gösterilir.")]
     [FormerlySerializedAs("combinedAmmoText")]
@@ -63,7 +60,6 @@ public class Weapon : MonoBehaviour
     private bool _reloading;
     private Coroutine _reloadRoutine;
     private Vector3 _baseShiftLocalPos;
-    private Vector3 _baseMuzzleLocalPos;
 
     // Cache starting ammo and sprite.
     void Awake()
@@ -73,9 +69,6 @@ public class Weapon : MonoBehaviour
 
         Transform shiftTarget = positionShiftTarget != null ? positionShiftTarget : transform;
         _baseShiftLocalPos = shiftTarget.localPosition;
-
-        if (muzzle != null)
-            _baseMuzzleLocalPos = muzzle.localPosition;
 
         IgnorePlayerVsShotLayerCollision();
 
@@ -165,15 +158,30 @@ public class Weapon : MonoBehaviour
     // Left-aim mirror: use sprite flipY so muzzle children are not mirrored in world space.
     void ApplyLeftAimVisual(bool mouseLeftOfBody)
     {
-        SpriteRenderer sr = weaponSpriteRenderer;
-        if (sr == null && weaponVisual != null)
-            sr = weaponVisual.GetComponent<SpriteRenderer>();
-
-        if (sr != null)
+        // When weaponPivot is present, localScale.y flip on the pivot mirrors both the sprite
+        // and all child transforms (including muzzle) automatically — no flipY or manual offset needed.
+        if (weaponPivot != null)
         {
-            sr.flipY = mouseLeftOfBody;
-            sr.transform.localScale = Vector3.one;
-            if (weaponVisual != null && weaponVisual != sr.transform)
+            SpriteRenderer sr = weaponSpriteRenderer;
+            if (sr == null && weaponVisual != null)
+                sr = weaponVisual.GetComponent<SpriteRenderer>();
+            if (sr != null)
+                sr.flipY = false;
+            if (weaponVisual != null)
+                weaponVisual.localScale = Vector3.one;
+            return;
+        }
+
+        // Fallback when there is no weaponPivot: flip sprite or visual scale directly.
+        SpriteRenderer fallbackSr = weaponSpriteRenderer;
+        if (fallbackSr == null && weaponVisual != null)
+            fallbackSr = weaponVisual.GetComponent<SpriteRenderer>();
+
+        if (fallbackSr != null)
+        {
+            fallbackSr.flipY = mouseLeftOfBody;
+            fallbackSr.transform.localScale = Vector3.one;
+            if (weaponVisual != null && weaponVisual != fallbackSr.transform)
                 weaponVisual.localScale = Vector3.one;
             return;
         }
@@ -210,6 +218,11 @@ public class Weapon : MonoBehaviour
             ? _baseShiftLocalPos + localOffsetWhenAimLeft
             : _baseShiftLocalPos;
 
+        // Flip pivot Y scale so both the sprite and all child transforms (muzzle included) are
+        // mirrored automatically when aiming left — no per-axis manual offset required.
+        if (weaponPivot != null)
+            weaponPivot.localScale = new Vector3(1f, mouseLeftOfBody ? -1f : 1f, 1f);
+
         ApplyLeftAimVisual(mouseLeftOfBody);
 
         if (weaponPivot != null)
@@ -221,13 +234,6 @@ public class Weapon : MonoBehaviour
                 float aimAngle = Mathf.Atan2(toMouse.y, toMouse.x) * Mathf.Rad2Deg;
                 weaponPivot.rotation = Quaternion.Euler(0f, 0f, aimAngle);
             }
-        }
-
-        // flipY does not move Shot Point; nudge muzzle in pivot space so spawn matches barrel art.
-        if (muzzle != null)
-        {
-            muzzle.localPosition = _baseMuzzleLocalPos +
-                                   (mouseLeftOfBody ? muzzleLocalAdjustWhenAimLeft : Vector3.zero);
         }
     }
 
