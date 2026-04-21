@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 // Aim at mouse, fire bullets from magazine with spread, auto / manual reload coroutine.
@@ -48,9 +49,32 @@ public class Weapon : MonoBehaviour
     [Tooltip("Optional SpriteRenderer on HUD (if not using UI Image) — same sprite.")]
     [SerializeField] private SpriteRenderer ammoHudWeaponSprite;
 
+    [Tooltip("Aktif olmayan (diğer) silahı gösteren HUD image.")]
+    [SerializeField] private Image inactiveWeaponHudImage;
+
+    [Tooltip("Aktif olmayan silah image'ının altındaki tuş etiketi (ör. '2').")]
+    [SerializeField] private TMP_Text inactiveWeaponKeyText;
+
     [Header("Reload UI")]
     [Tooltip("Reload sırasında görünür; süre boyunca 0 → 1 dolar, bitince kapanır.")]
     [SerializeField] private Slider reloadProgressSlider;
+
+    [Header("Weapon Slots")]
+    [Tooltip("Sırayla 1, 2, 3… tuşlarına atanan silah verileri. Boş bırakılırsa tek silah modu.")]
+    [SerializeField] private WeaponData[] weaponSlots;
+
+    [Header("Kickback")]
+    [Tooltip("Ateş edildiğinde silahın geri gideceği mesafe (pivot yerel X ekseninde). Örnek: 0.15–0.35.")]
+    [SerializeField] private float kickbackDistance = 0.25f;
+    [Tooltip("Ateş edildiğinde silahın geri teptiği açı (derece). 0 = sadece pozisyon, >0 = yukarı tepme eklenir.")]
+    [SerializeField] private float kickbackAngle = 8f;
+    [Tooltip("Geri tepkinin orijinal konuma dönüş hızı. Yüksek = sert/hızlı, düşük = yumuşak.")]
+    [SerializeField] private float kickbackReturnSpeed = 14f;
+
+    private float _recoilOffset;
+    private float _recoilAngleDeg;
+    private Vector3 _pivotBaseLocalPos;
+    private bool _pivotBaseCached;
 
     private int _magAmmo;
     private int _reserveAmmo;
@@ -61,6 +85,13 @@ public class Weapon : MonoBehaviour
     private Coroutine _reloadRoutine;
     private Vector3 _baseShiftLocalPos;
 
+    // Weapon slot system
+    private struct SlotState { public int mag, reserve, displayTotal; }
+    private SlotState[] _slotStates;
+    private int _activeSlot;
+    private static readonly Key[] DigitKeys =
+        { Key.Digit1, Key.Digit2, Key.Digit3, Key.Digit4, Key.Digit5 };
+
     // Cache starting ammo and sprite.
     void Awake()
     {
@@ -70,14 +101,10 @@ public class Weapon : MonoBehaviour
         Transform shiftTarget = positionShiftTarget != null ? positionShiftTarget : transform;
         _baseShiftLocalPos = shiftTarget.localPosition;
 
+        CachePivotBasePos();
         IgnorePlayerVsShotLayerCollision();
 
-        if (weaponData != null)
-        {
-            InitializeAmmoFromStartingTotal();
-            ApplyWeaponSprite();
-        }
-
+        InitSlots();
         RefreshAmmoUi();
 
         if (reloadProgressSlider != null)
@@ -88,10 +115,93 @@ public class Weapon : MonoBehaviour
         }
     }
 
+    void Update()
+    {
+        if (_slotStates == null || Keyboard.current == null)
+            return;
+        for (int i = 0; i < _slotStates.Length && i < DigitKeys.Length; i++)
+        {
+            if (i != _activeSlot && Keyboard.current[DigitKeys[i]].wasPressedThisFrame)
+                SwitchToSlot(i);
+        }
+    }
+
     void OnDisable()
     {
         if (reloadProgressSlider != null)
             reloadProgressSlider.gameObject.SetActive(false);
+    }
+
+    // Slot 0'dan başlayarak tüm slotları başlatır; yoksa tek silah moduna düşer.
+    void InitSlots()
+    {
+        bool hasSlots = weaponSlots != null && weaponSlots.Length > 0;
+        if (hasSlots)
+        {
+            _activeSlot = 0;
+            weaponData = weaponSlots[0];
+            _slotStates = new SlotState[weaponSlots.Length];
+            for (int i = 0; i < weaponSlots.Length; i++)
+                ComputeSlotAmmo(i);
+            LoadSlotAmmo(0);
+        }
+        else if (weaponData != null)
+        {
+            InitializeAmmoFromStartingTotal();
+        }
+
+        if (weaponData != null)
+            ApplyWeaponSprite();
+    }
+
+    // WeaponData'dan başlangıç mermi değerini hesaplar ve ilgili slota yazar.
+    void ComputeSlotAmmo(int index)
+    {
+        if (_slotStates == null || weaponSlots == null || index >= weaponSlots.Length) return;
+        WeaponData d = weaponSlots[index];
+        if (d == null) return;
+        int cap   = d.magazineSize;
+        int total = Mathf.Max(0, d.startingTotalAmmo);
+        int mag   = Mathf.Min(cap, total);
+        _slotStates[index] = new SlotState { mag = mag, reserve = total - mag, displayTotal = total };
+    }
+
+    void SaveSlotAmmo(int index)
+    {
+        if (_slotStates == null || index < 0 || index >= _slotStates.Length) return;
+        _slotStates[index] = new SlotState
+            { mag = _magAmmo, reserve = _reserveAmmo, displayTotal = _displayTotalAmmo };
+    }
+
+    void LoadSlotAmmo(int index)
+    {
+        if (_slotStates == null || index < 0 || index >= _slotStates.Length) return;
+        _magAmmo        = _slotStates[index].mag;
+        _reserveAmmo    = _slotStates[index].reserve;
+        _displayTotalAmmo = _slotStates[index].displayTotal;
+    }
+
+    // Aktif slotu kaydeder, yeni slota geçer ve HUD'ı günceller.
+    public void SwitchToSlot(int index)
+    {
+        if (_slotStates == null || index < 0 || index >= _slotStates.Length) return;
+        if (weaponSlots == null || index >= weaponSlots.Length || weaponSlots[index] == null) return;
+        if (index == _activeSlot) return;
+
+        SaveSlotAmmo(_activeSlot);
+
+        // Devam eden reload'u iptal et.
+        if (_reloadRoutine != null) { StopCoroutine(_reloadRoutine); _reloadRoutine = null; }
+        _reloading = false;
+        if (reloadProgressSlider != null) reloadProgressSlider.gameObject.SetActive(false);
+
+        _activeSlot  = index;
+        weaponData   = weaponSlots[index];
+        _nextShotTime = 0f;
+
+        LoadSlotAmmo(index);
+        ApplyWeaponSprite();
+        RefreshAmmoUi();
     }
 
     // Split starting total into magazine + reserve.
@@ -227,14 +337,37 @@ public class Weapon : MonoBehaviour
 
         if (weaponPivot != null)
         {
-            Vector2 pivotPos = weaponPivot.position;
-            Vector2 toMouse = (Vector2)mouseWorld - pivotPos;
+            CachePivotBasePos();
+
+            // Sadece X eksenini yönet: Y'yi (PreciseAimController'ın lift değeri) koruyarak
+            // pivot'u aim yönünün tersine kaydır. Sola nişanda işaret tersine döner.
+            float recoilSign = mouseLeftOfBody ? 1f : -1f;
+            Vector3 pivotPos = weaponPivot.localPosition;
+            pivotPos.x = _pivotBaseLocalPos.x + recoilSign * _recoilOffset;
+            weaponPivot.localPosition = pivotPos;
+
+            Vector2 pivotWorldPos = weaponPivot.position;
+            Vector2 toMouse = (Vector2)mouseWorld - pivotWorldPos;
             if (toMouse.sqrMagnitude > 1e-6f)
             {
                 float aimAngle = Mathf.Atan2(toMouse.y, toMouse.x) * Mathf.Rad2Deg;
-                weaponPivot.rotation = Quaternion.Euler(0f, 0f, aimAngle);
+                // Y scale -1 (sol nişan) durumunda açıyı tersine çevirerek her yönde yukarı tepme sağlanır.
+                float recoilContrib = mouseLeftOfBody ? -_recoilAngleDeg : _recoilAngleDeg;
+                weaponPivot.rotation = Quaternion.Euler(0f, 0f, aimAngle + recoilContrib);
             }
         }
+
+        float decay = kickbackReturnSpeed * Time.deltaTime;
+        _recoilOffset    = Mathf.Lerp(_recoilOffset,    0f, decay);
+        _recoilAngleDeg  = Mathf.Lerp(_recoilAngleDeg,  0f, decay);
+    }
+
+    void CachePivotBasePos()
+    {
+        if (_pivotBaseCached || weaponPivot == null)
+            return;
+        _pivotBaseLocalPos = weaponPivot.localPosition;
+        _pivotBaseCached = true;
     }
 
     // One shot if allowed; starts auto reload when magazine empties.
@@ -276,6 +409,8 @@ public class Weapon : MonoBehaviour
 
         _magAmmo--;
         _nextShotTime = Time.time + interval;
+        _recoilOffset = kickbackDistance;
+        _recoilAngleDeg = kickbackAngle;
         RefreshAmmoUi();
 
         if (_magAmmo <= 0)
@@ -311,6 +446,28 @@ public class Weapon : MonoBehaviour
 
         if (ammoHudWeaponSprite != null)
             ammoHudWeaponSprite.sprite = weaponData.weaponSprite;
+
+        RefreshInactiveWeaponHud();
+    }
+
+    // Aktif olmayan slotun image'ını ve tuş etiketini günceller.
+    void RefreshInactiveWeaponHud()
+    {
+        if (weaponSlots == null || weaponSlots.Length < 2) return;
+
+        for (int i = 0; i < weaponSlots.Length; i++)
+        {
+            if (i == _activeSlot) continue;
+            if (weaponSlots[i] == null) continue;
+
+            if (inactiveWeaponHudImage != null)
+                inactiveWeaponHudImage.sprite = weaponSlots[i].weaponSprite;
+
+            if (inactiveWeaponKeyText != null)
+                inactiveWeaponKeyText.text = (i + 1).ToString();
+
+            break; // ilk aktif-olmayan slot yeterli (2 silah için)
+        }
     }
 
     // Starts reload coroutine unless already running.

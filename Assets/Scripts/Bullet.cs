@@ -1,20 +1,14 @@
 using UnityEngine;
 
-// Straight-line projectile; Weapon calls Initialize, legacy prefabs use Start + serialized speed/dir.
+// Straight-line projectile; initialized by Weapon.TryShoot via Initialize().
 public class Bullet : MonoBehaviour
 {
     [SerializeField] private Rigidbody2D theRB;
     [SerializeField] private GameObject impactEffect;
 
-    [Header("Legacy prefab (boss etc.)")]
-    [SerializeField] private float bulletSpeed;
-    [SerializeField] public Vector2 moveDir;
-    [SerializeField] private int damageAmount;
-
     private Vector2 _dir;
     private float _speed;
     private int _damage;
-    private bool _initialized;
 
     // Sets direction, speed, damage from weapon; applies rotation and velocity.
     public void Initialize(Vector2 direction, float speed, int damage)
@@ -22,7 +16,6 @@ public class Bullet : MonoBehaviour
         _dir = direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector2.right;
         _speed = speed;
         _damage = Mathf.Max(1, damage);
-        _initialized = true;
 
         float z = Mathf.Atan2(_dir.y, _dir.x) * Mathf.Rad2Deg;
         transform.rotation = Quaternion.Euler(0f, 0f, z);
@@ -31,21 +24,9 @@ public class Bullet : MonoBehaviour
             theRB.linearVelocity = _dir * _speed;
     }
 
-    // Boss / old prefabs without Initialize: use inspector bulletSpeed + moveDir.
-    void Start()
-    {
-        if (_initialized)
-            return;
-        if (bulletSpeed > 0.001f && theRB != null)
-        {
-            Vector2 d = moveDir.sqrMagnitude > 1e-6f ? moveDir.normalized : Vector2.right;
-            Initialize(d, bulletSpeed, Mathf.Max(1, damageAmount));
-        }
-    }
-
     void FixedUpdate()
     {
-        if (!_initialized || theRB == null)
+        if (theRB == null)
             return;
         theRB.linearVelocity = _dir * _speed;
     }

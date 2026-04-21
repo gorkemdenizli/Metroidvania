@@ -153,5 +153,18 @@ public class BossBattle : MonoBehaviour
     public void EndBattle()
     {
         gameObject.SetActive(false);
+
+        fadeOutCounter = fadeOutTime;
+        anim.SetTrigger("vanish");
+        theBoss.GetComponent<Collider2D>().enabled = false;
+
+        BossBullet[] bullets = FindObjectsByType<BossBullet>(FindObjectsSortMode.None);
+        if (bullets.Length > 0)
+        {
+            foreach (BossBullet bb in bullets)
+            {
+                Destroy(bb.gameObject);
+            }
+        }
     }
 }

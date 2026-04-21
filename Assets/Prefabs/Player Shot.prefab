@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 209375748107438055}
   - component: {fileID: 3012293942671330984}
   - component: {fileID: 3996561211151459209}
-  - component: {fileID: 8523126103511442279}
+  - component: {fileID: -1301388424822936610}
   - component: {fileID: 2109238194232670524}
   - component: {fileID: 6251936859365729623}
   m_Layer: 7
@@ -31,7 +31,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 4, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -117,8 +117,8 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!58 &8523126103511442279
-CircleCollider2D:
+--- !u!61 &-1301388424822936610
+BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -152,7 +152,17 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_Radius: 0.05
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 0.125, y: 0.083333336}
+    newSize: {x: 0.375, y: 0.25}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 0.14, y: 0.1}
+  m_EdgeRadius: 0
 --- !u!50 &2109238194232670524
 Rigidbody2D:
   serializedVersion: 5
@@ -194,6 +204,3 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Bullet
   theRB: {fileID: 2109238194232670524}
   impactEffect: {fileID: 793485701807386139, guid: 40c29baf784dc32478fc56a471496eeb, type: 3}
-  bulletSpeed: 0
-  moveDir: {x: 0, y: 0}
-  damageAmount: 0
