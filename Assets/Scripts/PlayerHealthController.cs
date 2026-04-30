@@ -25,45 +25,60 @@ public class PlayerHealthController : MonoBehaviour
     public int currentHealth;
     [SerializeField] private float invincibilityLength;
     private float invincibilityCounter;
-    [SerializeField] private float flashLength;
+    [SerializeField] private float flashLength = 0.1f;
     private float flashCounter;
     [SerializeField] private SpriteRenderer[] playerSprites;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    // Drives the flash visual independently from invincibility iframes.
+    // Set by StartFlash(); checked each Update to toggle sprites.
+    private float _flashActiveTimer;
+
     void Start()
     {
         currentHealth = maxHealth;
 
+        // Auto-find sprites on the same GameObject if none assigned in Inspector.
+        if (playerSprites == null || playerSprites.Length == 0)
+            playerSprites = GetComponentsInChildren<SpriteRenderer>();
+
         UpdateHealthSlider(currentHealth, maxHealth);
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (invincibilityCounter > 0)
-        {
             invincibilityCounter -= Time.deltaTime;
 
-            flashCounter -= Time.deltaTime;
+        if (_flashActiveTimer <= 0f)
+            return;
 
-            if (flashCounter <= 0)
-            {
-                foreach (SpriteRenderer sr in playerSprites)
-                {
-                    sr.enabled = !sr.enabled;
-                }
-                flashCounter = flashLength;
-            }
+        _flashActiveTimer -= Time.deltaTime;
+        flashCounter     -= Time.deltaTime;
 
-            if (invincibilityCounter <= 0)
-            {
-                foreach (SpriteRenderer sr in playerSprites)
-                {
-                    sr.enabled = true;
-                }
-                flashCounter = 0f;
-            }
+        if (flashCounter <= 0f)
+        {
+            float interval = Mathf.Max(0.05f, flashLength);
+            foreach (SpriteRenderer sr in playerSprites)
+                sr.enabled = !sr.enabled;
+            flashCounter = interval;
         }
+
+        if (_flashActiveTimer <= 0f)
+        {
+            foreach (SpriteRenderer sr in playerSprites)
+                sr.enabled = true;
+            flashCounter = 0f;
+        }
+    }
+
+    // Starts the sprite flash. Triggers on any hit (armor or health).
+    void StartFlash()
+    {
+        _flashActiveTimer = Mathf.Max(0.1f, invincibilityLength);
+        flashCounter      = 0f;
+
+        foreach (SpriteRenderer sr in playerSprites)
+            sr.enabled = false;
     }
 
     public void UpdateHealthSlider(int currentHealth, int maxHealth)
@@ -82,24 +97,31 @@ public class PlayerHealthController : MonoBehaviour
 
     public void DamagePlayer(int damageAmount)
     {
-        if (invincibilityCounter <= 0)
+        if (invincibilityCounter > 0)
+            return;
+
+        // Armor absorbs damage first; remainder hits health.
+        int healthDamage = ArmorController.instance != null
+            ? ArmorController.instance.ProcessDamage(damageAmount)
+            : damageAmount;
+
+        // Flash on every hit (armor or health) for visual feedback.
+        StartFlash();
+
+        if (healthDamage <= 0)
+            return; // armor absorbed all — no health damage, no iframes
+
+        currentHealth -= healthDamage;
+        invincibilityCounter = invincibilityLength;
+
+        if (currentHealth <= 0)
         {
-            currentHealth -= damageAmount;
-
-            if (currentHealth <= 0)
-            {
-                currentHealth = 0;
-
-                //gameObject.SetActive(false);
-                RespawnController.instance.Respawn();
-            }
-            else
-            {
-                invincibilityCounter = invincibilityLength;
-            }
-
-            UpdateHealthSlider(currentHealth, maxHealth);
+            currentHealth = 0;
+            RespawnController.instance.Respawn();
+            return;
         }
+
+        UpdateHealthSlider(currentHealth, maxHealth);
     }
 
     public void fillHealth()

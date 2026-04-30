@@ -451,10 +451,11 @@ public class PlayerController : MonoBehaviour
         theRB.gravityScale = originalGravity;
     }
 
-    // accel toward walk or run target vx
+    // accel toward walk or run target vx (scaled by equipped armor type)
     void ApplyHorizontalMove()
     {
-        float targetMax = IsSprintHeld() ? runSpeed : walkSpeed;
+        float armorMult = ArmorController.instance != null ? ArmorController.instance.SpeedMultiplier : 1f;
+        float targetMax = (IsSprintHeld() ? runSpeed : walkSpeed) * armorMult;
         float targetVx = moveInput.x * targetMax;
         float accel = Mathf.Abs(moveInput.x) > 0.01f ? groundAcceleration : groundDeceleration;
         float newVx = Mathf.MoveTowards(theRB.linearVelocity.x, targetVx, accel * Time.fixedDeltaTime);
