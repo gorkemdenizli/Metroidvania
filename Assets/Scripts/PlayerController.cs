@@ -169,6 +169,7 @@ public class PlayerController : MonoBehaviour
         UpdateAimFacingAndWeaponInput();
         RefreshGroundedState();
         OnLandedClearStaleJumpTrigger();
+        PollJumpInput();
         TickJumpBuffer();
     }
 
@@ -225,7 +226,6 @@ public class PlayerController : MonoBehaviour
         if (on)
         {
             embeddedPlayerMap.Enable();
-            embeddedJump.performed += Jump;
             embeddedDash.performed += StartDash;
             embeddedBomb.performed += DropBomb;
             if (embeddedInteract != null)
@@ -233,7 +233,6 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            embeddedJump.performed -= Jump;
             embeddedDash.performed -= StartDash;
             embeddedBomb.performed -= DropBomb;
             if (embeddedInteract != null)
@@ -257,7 +256,6 @@ public class PlayerController : MonoBehaviour
 
         if (!on)
         {
-            TogglePerformed(jumpAction, Jump, false);
             TogglePerformed(dashAction, StartDash, false);
             TogglePerformed(bombAction, DropBomb, false);
             TogglePerformed(interactAction, Interact, false);
@@ -267,7 +265,6 @@ public class PlayerController : MonoBehaviour
 
         if (on)
         {
-            TogglePerformed(jumpAction, Jump, true);
             TogglePerformed(dashAction, StartDash, true);
             TogglePerformed(bombAction, DropBomb, true);
             TogglePerformed(interactAction, Interact, true);
@@ -456,8 +453,19 @@ public class PlayerController : MonoBehaviour
     {
         float armorMult = ArmorController.instance != null ? ArmorController.instance.SpeedMultiplier : 1f;
         float targetMax = (IsSprintHeld() ? runSpeed : walkSpeed) * armorMult;
-        float targetVx = moveInput.x * targetMax;
-        float accel = Mathf.Abs(moveInput.x) > 0.01f ? groundAcceleration : groundDeceleration;
+
+        // Guard against Dpad composite diagonal normalization: when W/Up is held with A/D the
+        // composite can output 0.707 instead of 1.0 on X. Clamp to [-1, 1] after restoring
+        // the full magnitude so horizontal speed is never reduced by a jump-key press.
+        float inputX = Mathf.Clamp(moveInput.x, -1f, 1f);
+        if (Mathf.Abs(moveInput.y) > 0.5f && Mathf.Abs(inputX) > 0.01f)
+            inputX = Mathf.Sign(inputX);
+
+        float targetVx = inputX * targetMax;
+        bool hasHorizontalInput = Mathf.Abs(inputX) > 0.01f;
+        // No deceleration in air when player isn't pressing a horizontal key — prevents W (jump key
+        // that's also the Move "Up" composite binding) from zeroing moveInput.x and braking mid-air.
+        float accel = hasHorizontalInput ? groundAcceleration : (isOnGround ? groundDeceleration : 0f);
         float newVx = Mathf.MoveTowards(theRB.linearVelocity.x, targetVx, accel * Time.fixedDeltaTime);
         theRB.linearVelocity = new Vector2(newVx, theRB.linearVelocity.y);
     }
@@ -513,14 +521,28 @@ public class PlayerController : MonoBehaviour
 
     // --- fire jump interact ---
 
-    // jump pressed start buffer try jump now
-    void Jump(InputAction.CallbackContext context)
+    // Polls each jump binding independently so pressing a second key while the first is held
+    // still registers — Unity's performed callback doesn't re-fire when action is already held.
+    void PollJumpInput()
     {
-        if (!canMove)
-            return;
-
+        if (!canMove) return;
+        if (!AnyJumpBindingPressedThisFrame()) return;
         jumpBufferTimer = jumpBufferTime;
         TryConsumeJumpBuffer();
+    }
+
+    bool AnyJumpBindingPressedThisFrame()
+    {
+        InputAction action = useEmbeddedPlayerActions
+            ? embeddedJump
+            : jumpAction != null ? jumpAction.action : null;
+        if (action == null) return false;
+        foreach (var control in action.controls)
+        {
+            if (control is UnityEngine.InputSystem.Controls.ButtonControl btn && btn.wasPressedThisFrame)
+                return true;
+        }
+        return false;
     }
 
     // ground or coyote jump else double if allowed
@@ -549,8 +571,16 @@ public class PlayerController : MonoBehaviour
         lastGroundedTime = -100f;
         jumpGraceEnd = Time.time + JumpGroundSuppressDuration;
 
+        // Force isOnGround false immediately so the animator bool is already false
+        // when the trigger fires this same frame — otherwise RefreshGroundedState ran
+        // earlier in Update and the bool is still true, causing the condition to fail
+        // and the trigger to be silently consumed.
+        isOnGround = false;
+
         if (anim == null)
             return;
+
+        anim.SetBool(AnimIsOnGround, false);
 
         if (isDoubleJump)
         {

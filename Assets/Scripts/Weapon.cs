@@ -220,24 +220,31 @@ public class Weapon : MonoBehaviour
         if (weaponData == null)
             return;
 
-        int carried = _magAmmo + _reserveAmmo;
-        if (carried == 0)
-            _displayTotalAmmo = 0;
+        bool infinite = weaponData.infiniteAmmo;
+
+        if (!infinite)
+        {
+            int carried = _magAmmo + _reserveAmmo;
+            if (carried == 0)
+                _displayTotalAmmo = 0;
+        }
+
+        string totalStr = infinite ? "\u221E" : _displayTotalAmmo.ToString();
 
         if (ammoMagazineText != null && ammoTotalText != null)
         {
             ammoMagazineText.text = _magAmmo.ToString();
-            ammoTotalText.text = _displayTotalAmmo.ToString();
+            ammoTotalText.text = totalStr;
             if (ammoSeparatorText != null)
                 ammoSeparatorText.text = "/";
         }
         else if (ammoMagazineText != null)
         {
-            ammoMagazineText.text = _magAmmo + " / " + _displayTotalAmmo;
+            ammoMagazineText.text = _magAmmo + " / " + totalStr;
         }
         else if (ammoTotalText != null)
         {
-            ammoTotalText.text = _magAmmo + " / " + _displayTotalAmmo;
+            ammoTotalText.text = _magAmmo + " / " + totalStr;
         }
     }
 
@@ -401,7 +408,8 @@ public class Weapon : MonoBehaviour
 
         Vector2 dir = toCursor.normalized;
         float baseDeg = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-        float spread = Random.Range(-weaponData.accuracy, weaponData.accuracy);
+        float spreadHalf = 10f - weaponData.accuracy;
+        float spread = Random.Range(-spreadHalf, spreadHalf);
         Vector2 shootDir = (Quaternion.Euler(0f, 0f, baseDeg + spread) * Vector2.right).normalized;
 
         Bullet b = Instantiate(bulletPrefab, muzzle.position, Quaternion.identity);
@@ -411,6 +419,7 @@ public class Weapon : MonoBehaviour
         _nextShotTime = Time.time + interval;
         _recoilOffset = kickbackDistance;
         _recoilAngleDeg = kickbackAngle;
+        CameraShake.instance?.Shake(weaponData.shootShakeIntensity, weaponData.shootShakeDuration);
         RefreshAmmoUi();
 
         if (_magAmmo <= 0)
@@ -426,7 +435,7 @@ public class Weapon : MonoBehaviour
             return false;
         if (_magAmmo >= weaponData.magazineSize)
             return false;
-        if (_reserveAmmo <= 0)
+        if (!weaponData.infiniteAmmo && _reserveAmmo <= 0)
             return false;
 
         return StartReloadIfNeeded(force: false);
@@ -482,7 +491,7 @@ public class Weapon : MonoBehaviour
         int need = cap - _magAmmo;
         if (need <= 0)
             return false;
-        if (_reserveAmmo <= 0)
+        if (!weaponData.infiniteAmmo && _reserveAmmo <= 0)
             return false;
 
         if (_reloadRoutine != null)
@@ -521,10 +530,14 @@ public class Weapon : MonoBehaviour
 
         int cap = weaponData.magazineSize;
         int need = cap - _magAmmo;
-        int load = Mathf.Min(need, _reserveAmmo);
+        bool infinite = weaponData.infiniteAmmo;
+        int load = infinite ? need : Mathf.Min(need, _reserveAmmo);
         _magAmmo += load;
-        _reserveAmmo -= load;
-        _displayTotalAmmo -= load;
+        if (!infinite)
+        {
+            _reserveAmmo -= load;
+            _displayTotalAmmo -= load;
+        }
 
         _reloading = false;
         _reloadRoutine = null;

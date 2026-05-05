@@ -17,6 +17,9 @@ MonoBehaviour:
   accuracy: 1
   magazineSize: 12
   startingTotalAmmo: 120
+  infiniteAmmo: 1
   reloadSpeed: 1.2
   bulletSpeed: 18
   weaponSprite: {fileID: 8804883829504955321, guid: 943c61fb86931eb42b7301c1801d6fa0, type: 3}
+  shootShakeIntensity: 0.08
+  shootShakeDuration: 0.08

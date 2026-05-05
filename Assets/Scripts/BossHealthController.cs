@@ -6,9 +6,12 @@ public class BossHealthController : MonoBehaviour
 {
     public static BossHealthController instance;
 
+    private HitFlash _hitFlash;
+
     private void Awake()
     {
         instance = this;
+        _hitFlash = GetComponent<HitFlash>();
     }
 
     [SerializeField] private Slider bossHealthSlider;
@@ -39,17 +42,23 @@ public class BossHealthController : MonoBehaviour
         }
     }
 
-    public void DamageBoss(int damageAmount)
+    // Returns true if this hit killed the boss.
+    public bool DamageBoss(int damageAmount)
     {
+        _hitFlash?.Flash();
+
         currentHealth -= damageAmount;
 
+        bool killed = false;
         if (currentHealth <= 0)
         {
             currentHealth = 0;
             theBoss.EndBattle();
+            killed = true;
         }
 
         UpdateHealthSlider(currentHealth, maxHealth);
+        return killed;
     }
 
 

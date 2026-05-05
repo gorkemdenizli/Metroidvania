@@ -14,9 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
   damage: 12
   fireRate: 6
-  accuracy: 2
+  accuracy: 6
   magazineSize: 31
   startingTotalAmmo: 600
+  infiniteAmmo: 0
   reloadSpeed: 2.2
   bulletSpeed: 40
   weaponSprite: {fileID: -1552922683845821017, guid: 943c61fb86931eb42b7301c1801d6fa0, type: 3}
+  shootShakeIntensity: 0.08
+  shootShakeDuration: 0.08

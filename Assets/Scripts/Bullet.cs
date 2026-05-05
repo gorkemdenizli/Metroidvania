@@ -33,11 +33,30 @@ public class Bullet : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D collision)
     {
+        bool hitEnemy = false;
+        bool killed   = false;
+
         if (collision.CompareTag("Enemy"))
-            collision.GetComponent<EnemyHealthController>()?.DamageEnemy(_damage);
+        {
+            var ehc = collision.GetComponent<EnemyHealthController>();
+            if (ehc != null)
+            {
+                killed   = ehc.DamageEnemy(_damage);
+                hitEnemy = true;
+            }
+
+            if (!killed)
+                collision.GetComponent<EnemyKnockback>()?.Apply(_dir);
+        }
 
         if (collision.CompareTag("Boss") && BossHealthController.instance != null)
-            BossHealthController.instance.DamageBoss(_damage);
+        {
+            killed   = BossHealthController.instance.DamageBoss(_damage);
+            hitEnemy = true;
+        }
+
+        if (hitEnemy)
+            HitmarkerController.instance?.ShowHit(killed);
 
         if (impactEffect != null)
             Instantiate(impactEffect, transform.position, Quaternion.identity);
